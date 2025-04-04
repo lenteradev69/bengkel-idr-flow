@@ -1,3 +1,4 @@
+
 import React, { useState, useRef } from 'react';
 import { useApp } from '@/contexts/AppContext';
 import { formatIDR } from '@/utils/currencyFormatter';
@@ -296,54 +297,70 @@ const POS: React.FC = () => {
             
             <CardContent className="flex-1 flex flex-col">
               {cartItems.length > 0 ? (
-                <ul className="space-y-3">
-                  {cartItems.map(item => (
-                    <li key={item.id} className="border-b pb-3 last:border-0 animate-fade-in">
-                      <div className="flex justify-between">
-                        <div className="flex-1">
-                          <div className="font-medium">{item.name}</div>
-                          <div className="text-sm text-muted-foreground currency">
-                            {formatIDR(item.price)} × {item.quantity}
+                <>
+                  <ul className="space-y-3 flex-1 overflow-auto">
+                    {cartItems.map(item => (
+                      <li key={item.id} className="border-b pb-3 last:border-0 animate-fade-in">
+                        <div className="flex justify-between">
+                          <div className="flex-1">
+                            <div className="font-medium">{item.name}</div>
+                            <div className="text-sm text-muted-foreground currency">
+                              {formatIDR(item.price)} × {item.quantity}
+                            </div>
+                          </div>
+                          <div className="font-medium currency whitespace-nowrap">
+                            {formatIDR(item.price * item.quantity)}
                           </div>
                         </div>
-                        <div className="font-medium currency whitespace-nowrap">
-                          {formatIDR(item.price * item.quantity)}
+                        
+                        <div className="flex items-center mt-2">
+                          <Button
+                            variant="outline"
+                            size="icon"
+                            className="h-8 w-8 rounded-full"
+                            onClick={() => handleQuantityChange(item, item.quantity - 1)}
+                          >
+                            <Minus className="h-3 w-3" />
+                          </Button>
+                          
+                          <span className="w-10 text-center">{item.quantity}</span>
+                          
+                          <Button
+                            variant="outline"
+                            size="icon"
+                            className="h-8 w-8 rounded-full"
+                            onClick={() => handleQuantityChange(item, item.quantity + 1)}
+                          >
+                            <Plus className="h-3 w-3" />
+                          </Button>
+                          
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 ml-auto text-destructive"
+                            onClick={() => removeFromCart(item.id)}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
                         </div>
-                      </div>
-                      
-                      <div className="flex items-center mt-2">
-                        <Button
-                          variant="outline"
-                          size="icon"
-                          className="h-8 w-8 rounded-full"
-                          onClick={() => handleQuantityChange(item, item.quantity - 1)}
-                        >
-                          <Minus className="h-3 w-3" />
-                        </Button>
-                        
-                        <span className="w-10 text-center">{item.quantity}</span>
-                        
-                        <Button
-                          variant="outline"
-                          size="icon"
-                          className="h-8 w-8 rounded-full"
-                          onClick={() => handleQuantityChange(item, item.quantity + 1)}
-                        >
-                          <Plus className="h-3 w-3" />
-                        </Button>
-                        
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-8 w-8 ml-auto text-destructive"
-                          onClick={() => removeFromCart(item.id)}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </li>
-                  ))}
-                </ul>
+                      </li>
+                    ))}
+                  </ul>
+                  
+                  <div className="border-t pt-3 mt-3">
+                    <div className="flex justify-between mb-2">
+                      <span className="text-muted-foreground">Subtotal:</span>
+                      <span className="font-medium currency">{formatIDR(cartSubtotal)}</span>
+                    </div>
+                    
+                    <Button 
+                      className="w-full"
+                      onClick={handleCheckout}
+                    >
+                      Checkout
+                    </Button>
+                  </div>
+                </>
               ) : (
                 <div className="flex flex-col items-center justify-center h-full text-center">
                   <ShoppingCart className="h-12 w-12 text-muted mb-4" />
@@ -375,7 +392,7 @@ const POS: React.FC = () => {
                   <SelectValue placeholder="Walk-in customer" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="walk-in">Walk-in customer</SelectItem>
+                  <SelectItem value="">Walk-in customer</SelectItem>
                   {customers.map(customer => (
                     <SelectItem key={customer.id} value={customer.id}>
                       {customer.name} ({customer.phone})
