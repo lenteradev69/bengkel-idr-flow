@@ -1,4 +1,3 @@
-
 import React, { useState, useRef } from 'react';
 import { useApp } from '@/contexts/AppContext';
 import { formatIDR } from '@/utils/currencyFormatter';
@@ -70,23 +69,18 @@ const POS: React.FC = () => {
   const { toast } = useToast();
   const isMobile = useIsMobile();
   
-  // Receipt ref for printing/downloading
   const receiptRef = useRef<HTMLDivElement>(null);
   
-  // State for search and filters
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   
-  // State for checkout dialog
   const [checkoutDialogOpen, setCheckoutDialogOpen] = useState(false);
   const [selectedCustomerId, setSelectedCustomerId] = useState<string>('');
   const [receiptDialogOpen, setReceiptDialogOpen] = useState(false);
   const [currentReceipt, setCurrentReceipt] = useState<any>(null);
   
-  // New state for tracking checkout process
   const [checkoutComplete, setCheckoutComplete] = useState(false);
   
-  // Filtered products
   const filteredProducts = products.filter(product => {
     const matchesSearch = product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                         product.description?.toLowerCase().includes(searchTerm.toLowerCase());
@@ -96,9 +90,7 @@ const POS: React.FC = () => {
     return matchesSearch && matchesCategory;
   });
   
-  // Handle add to cart
   const handleAddToCart = (product: any) => {
-    // Check if we have enough stock if it's not a service
     if (product.category !== 'repair' && product.stock <= 0) {
       toast({
         variant: 'destructive',
@@ -115,14 +107,12 @@ const POS: React.FC = () => {
     });
   };
   
-  // Handle quantity change
   const handleQuantityChange = (item: any, newQuantity: number) => {
     if (newQuantity <= 0) {
       removeFromCart(item.id);
       return;
     }
     
-    // Check stock if it's not a service
     const product = products.find(p => p.id === item.productId);
     if (product && product.category !== 'repair' && newQuantity > product.stock) {
       toast({
@@ -136,7 +126,6 @@ const POS: React.FC = () => {
     updateCartItem(item.id, newQuantity);
   };
   
-  // Handle checkout
   const handleCheckout = () => {
     if (cartItems.length === 0) {
       toast({
@@ -150,7 +139,6 @@ const POS: React.FC = () => {
     setCheckoutDialogOpen(true);
   };
   
-  // Process checkout
   const processCheckout = () => {
     const receipt = checkout({
       customerId: selectedCustomerId || undefined,
@@ -164,7 +152,6 @@ const POS: React.FC = () => {
     setCheckoutComplete(true);
   };
   
-  // Handle print receipt
   const handlePrintReceipt = () => {
     printReceipt(receiptRef);
     
@@ -174,7 +161,6 @@ const POS: React.FC = () => {
     });
   };
   
-  // Handle download receipt
   const handleDownloadReceipt = () => {
     if (currentReceipt) {
       downloadReceiptAsPDF(receiptRef, currentReceipt);
@@ -186,12 +172,10 @@ const POS: React.FC = () => {
     }
   };
   
-  // Handle new transaction
   const handleNewTransaction = () => {
     setReceiptDialogOpen(false);
     setCheckoutComplete(false);
     setSelectedCustomerId('');
-    // Receipt has already been cleared via checkout()
   };
   
   return (
@@ -199,9 +183,7 @@ const POS: React.FC = () => {
       <h1 className="text-2xl font-bold mb-6">Point of Sale</h1>
       
       <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
-        {/* Product catalog */}
         <div className="lg:col-span-3 space-y-6">
-          {/* Search and Filter */}
           <div className="flex flex-col sm:flex-row gap-4">
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -230,7 +212,6 @@ const POS: React.FC = () => {
             </Select>
           </div>
           
-          {/* Categories Tabs */}
           <Tabs defaultValue="all" onValueChange={setSelectedCategory} value={selectedCategory}>
             <TabsList className="w-full justify-start overflow-x-auto">
               <TabsTrigger value="all">All</TabsTrigger>
@@ -242,7 +223,6 @@ const POS: React.FC = () => {
             </TabsList>
           </Tabs>
           
-          {/* Products Grid */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {filteredProducts.map(product => (
               <Card 
@@ -292,7 +272,6 @@ const POS: React.FC = () => {
           </div>
         </div>
         
-        {/* Cart */}
         <div className="lg:col-span-2">
           <Card className="h-full flex flex-col glass-card shadow-lg">
             <CardHeader className="pb-2">
@@ -316,122 +295,62 @@ const POS: React.FC = () => {
             </CardHeader>
             
             <CardContent className="flex-1 flex flex-col">
-              {/* Cart Items */}
-              <div className="flex-1 overflow-y-auto max-h-[calc(100vh-24rem)] min-h-[300px]">
-                {cartItems.length > 0 ? (
-                  <ul className="space-y-3">
-                    {cartItems.map(item => (
-                      <li key={item.id} className="border-b pb-3 last:border-0 animate-fade-in">
-                        <div className="flex justify-between">
-                          <div className="flex-1">
-                            <div className="font-medium">{item.name}</div>
-                            <div className="text-sm text-muted-foreground currency">
-                              {formatIDR(item.price)} × {item.quantity}
-                            </div>
-                          </div>
-                          <div className="font-medium currency whitespace-nowrap">
-                            {formatIDR(item.price * item.quantity)}
+              {cartItems.length > 0 ? (
+                <ul className="space-y-3">
+                  {cartItems.map(item => (
+                    <li key={item.id} className="border-b pb-3 last:border-0 animate-fade-in">
+                      <div className="flex justify-between">
+                        <div className="flex-1">
+                          <div className="font-medium">{item.name}</div>
+                          <div className="text-sm text-muted-foreground currency">
+                            {formatIDR(item.price)} × {item.quantity}
                           </div>
                         </div>
+                        <div className="font-medium currency whitespace-nowrap">
+                          {formatIDR(item.price * item.quantity)}
+                        </div>
+                      </div>
+                      
+                      <div className="flex items-center mt-2">
+                        <Button
+                          variant="outline"
+                          size="icon"
+                          className="h-8 w-8 rounded-full"
+                          onClick={() => handleQuantityChange(item, item.quantity - 1)}
+                        >
+                          <Minus className="h-3 w-3" />
+                        </Button>
                         
-                        <div className="flex items-center mt-2">
-                          <Button
-                            variant="outline"
-                            size="icon"
-                            className="h-8 w-8 rounded-full"
-                            onClick={() => handleQuantityChange(item, item.quantity - 1)}
-                          >
-                            <Minus className="h-3 w-3" />
-                          </Button>
-                          
-                          <span className="w-10 text-center">{item.quantity}</span>
-                          
-                          <Button
-                            variant="outline"
-                            size="icon"
-                            className="h-8 w-8 rounded-full"
-                            onClick={() => handleQuantityChange(item, item.quantity + 1)}
-                          >
-                            <Plus className="h-3 w-3" />
-                          </Button>
-                          
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8 ml-auto text-destructive"
-                            onClick={() => removeFromCart(item.id)}
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </li>
-                    ))}
-                  </ul>
-                ) : (
-                  <div className="flex flex-col items-center justify-center h-full text-center">
-                    <ShoppingCart className="h-12 w-12 text-muted mb-4" />
-                    <h3 className="text-lg font-medium">Your cart is empty</h3>
-                    <p className="text-muted-foreground mt-1">
-                      Add products to get started
-                    </p>
-                  </div>
-                )}
-              </div>
-              
-              {/* Cart Summary */}
-              {cartItems.length > 0 && (
-                <div className="mt-6 space-y-4">
-                  <div className="space-y-1.5">
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Subtotal</span>
-                      <span className="currency">{formatIDR(cartSubtotal)}</span>
-                    </div>
-                    
-                    <div className="flex justify-between items-center">
-                      <div className="flex items-center gap-2">
-                        <span className="text-muted-foreground">Tax</span>
-                        <div className="w-16">
-                          <Input
-                            type="number"
-                            value={cartTax}
-                            onChange={(e) => setCartTax(parseFloat(e.target.value) || 0)}
-                            className="h-7 text-right"
-                            min="0"
-                            max="100"
-                          />
-                        </div>
-                        <span className="text-muted-foreground">%</span>
+                        <span className="w-10 text-center">{item.quantity}</span>
+                        
+                        <Button
+                          variant="outline"
+                          size="icon"
+                          className="h-8 w-8 rounded-full"
+                          onClick={() => handleQuantityChange(item, item.quantity + 1)}
+                        >
+                          <Plus className="h-3 w-3" />
+                        </Button>
+                        
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 ml-auto text-destructive"
+                          onClick={() => removeFromCart(item.id)}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
                       </div>
-                      <span className="currency">{formatIDR((cartSubtotal * cartTax) / 100)}</span>
-                    </div>
-                    
-                    <div className="flex justify-between items-center">
-                      <div className="flex items-center gap-2">
-                        <span className="text-muted-foreground">Discount</span>
-                        <div className="w-16">
-                          <Input
-                            type="number"
-                            value={cartDiscount}
-                            onChange={(e) => setCartDiscount(parseFloat(e.target.value) || 0)}
-                            className="h-7 text-right"
-                            min="0"
-                            max="100"
-                          />
-                        </div>
-                        <span className="text-muted-foreground">%</span>
-                      </div>
-                      <span className="currency">{formatIDR((cartSubtotal * cartDiscount) / 100)}</span>
-                    </div>
-                    
-                    <div className="flex justify-between text-lg font-bold pt-2 border-t">
-                      <span>Total</span>
-                      <span className="currency">{formatIDR(cartTotal)}</span>
-                    </div>
-                  </div>
-                  
-                  <Button className="w-full" size="lg" onClick={handleCheckout}>
-                    Checkout
-                  </Button>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <div className="flex flex-col items-center justify-center h-full text-center">
+                  <ShoppingCart className="h-12 w-12 text-muted mb-4" />
+                  <h3 className="text-lg font-medium">Your cart is empty</h3>
+                  <p className="text-muted-foreground mt-1">
+                    Add products to get started
+                  </p>
                 </div>
               )}
             </CardContent>
@@ -439,7 +358,6 @@ const POS: React.FC = () => {
         </div>
       </div>
       
-      {/* Checkout Dialog */}
       <Dialog open={checkoutDialogOpen} onOpenChange={setCheckoutDialogOpen}>
         <DialogContent className="glass-card">
           <DialogHeader>
@@ -457,7 +375,7 @@ const POS: React.FC = () => {
                   <SelectValue placeholder="Walk-in customer" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Walk-in customer</SelectItem>
+                  <SelectItem value="walk-in">Walk-in customer</SelectItem>
                   {customers.map(customer => (
                     <SelectItem key={customer.id} value={customer.id}>
                       {customer.name} ({customer.phone})
@@ -498,7 +416,6 @@ const POS: React.FC = () => {
         </DialogContent>
       </Dialog>
       
-      {/* Receipt Dialog */}
       <Dialog open={receiptDialogOpen} onOpenChange={setReceiptDialogOpen}>
         <DialogContent className="sm:max-w-md glass-card">
           <DialogHeader>

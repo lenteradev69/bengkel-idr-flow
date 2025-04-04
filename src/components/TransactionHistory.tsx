@@ -1,4 +1,3 @@
-
 import React, { useState, useRef } from 'react';
 import { useApp } from '@/contexts/AppContext';
 import { formatIDR } from '@/utils/currencyFormatter';
@@ -43,10 +42,8 @@ const TransactionHistory: React.FC = () => {
   const { transactions, customers } = useApp();
   const { toast } = useToast();
   
-  // Receipt ref for printing/downloading
   const receiptRef = useRef<HTMLDivElement>(null);
   
-  // State for search and filters
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCustomerId, setSelectedCustomerId] = useState<string>('all');
   const [dateFrom, setDateFrom] = useState<string>('');
@@ -54,7 +51,6 @@ const TransactionHistory: React.FC = () => {
   const [receiptDialogOpen, setReceiptDialogOpen] = useState(false);
   const [selectedTransaction, setSelectedTransaction] = useState<any>(null);
   
-  // Filtered transactions
   const filteredTransactions = transactions.filter(transaction => {
     const matchesSearch = 
       transaction.id.includes(searchTerm) ||
@@ -78,13 +74,11 @@ const TransactionHistory: React.FC = () => {
     return matchesSearch && matchesCustomer && matchesDateFrom && matchesDateTo;
   });
   
-  // View receipt
   const viewReceipt = (transaction: any) => {
     setSelectedTransaction(transaction);
     setReceiptDialogOpen(true);
   };
   
-  // Handle print receipt
   const handlePrintReceipt = () => {
     printReceipt(receiptRef);
     
@@ -94,7 +88,6 @@ const TransactionHistory: React.FC = () => {
     });
   };
   
-  // Handle download receipt
   const handleDownloadReceipt = () => {
     if (selectedTransaction) {
       downloadReceiptAsPDF(receiptRef, selectedTransaction);
@@ -106,10 +99,7 @@ const TransactionHistory: React.FC = () => {
     }
   };
   
-  // Handle export transactions
   const exportTransactions = () => {
-    // In a real app, this would generate a CSV/Excel file
-    // For now, we'll just show a toast
     toast({
       title: 'Success',
       description: 'Transactions exported successfully'
@@ -126,7 +116,6 @@ const TransactionHistory: React.FC = () => {
         </Button>
       </div>
       
-      {/* Search and Filter */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <div className="relative">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -178,7 +167,6 @@ const TransactionHistory: React.FC = () => {
         </div>
       </div>
       
-      {/* Transactions Table */}
       {filteredTransactions.length > 0 ? (
         <div className="border rounded-lg overflow-hidden glass-card shadow-md">
           <Table>
@@ -242,7 +230,6 @@ const TransactionHistory: React.FC = () => {
         </div>
       )}
       
-      {/* Receipt Dialog */}
       <Dialog open={receiptDialogOpen} onOpenChange={setReceiptDialogOpen}>
         <DialogContent className="sm:max-w-md glass-card">
           <DialogHeader>
