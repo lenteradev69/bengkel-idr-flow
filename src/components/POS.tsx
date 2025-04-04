@@ -1,11 +1,13 @@
 
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { useApp } from '@/contexts/AppContext';
 import { formatIDR } from '@/utils/currencyFormatter';
+import { printReceipt, downloadReceiptAsPDF } from '@/utils/receiptUtils';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
+import { Receipt } from '@/components/ui/receipt';
 import { 
   Card, 
   CardContent, 
@@ -40,10 +42,13 @@ import {
   Plus, 
   Minus,
   X,
-  Receipt,
-  Tag
+  Receipt as ReceiptIcon,
+  Tag,
+  Printer,
+  Download
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 const POS: React.FC = () => {
   const { 
@@ -63,6 +68,10 @@ const POS: React.FC = () => {
     checkout
   } = useApp();
   const { toast } = useToast();
+  const isMobile = useIsMobile();
+  
+  // Receipt ref for printing/downloading
+  const receiptRef = useRef<HTMLDivElement>(null);
   
   // State for search and filters
   const [searchTerm, setSearchTerm] = useState('');
@@ -73,6 +82,9 @@ const POS: React.FC = () => {
   const [selectedCustomerId, setSelectedCustomerId] = useState<string>('');
   const [receiptDialogOpen, setReceiptDialogOpen] = useState(false);
   const [currentReceipt, setCurrentReceipt] = useState<any>(null);
+  
+  // New state for tracking checkout process
+  const [checkoutComplete, setCheckoutComplete] = useState(false);
   
   // Filtered products
   const filteredProducts = products.filter(product => {
@@ -149,17 +161,37 @@ const POS: React.FC = () => {
     setCurrentReceipt(receipt);
     setCheckoutDialogOpen(false);
     setReceiptDialogOpen(true);
+    setCheckoutComplete(true);
   };
   
   // Handle print receipt
-  const printReceipt = () => {
-    // In a real app, this would connect to a printer
-    // For now, we'll just show a toast
+  const handlePrintReceipt = () => {
+    printReceipt(receiptRef);
+    
     toast({
       title: 'Success',
-      description: 'Receipt printed successfully'
+      description: 'Receipt sent to printer'
     });
+  };
+  
+  // Handle download receipt
+  const handleDownloadReceipt = () => {
+    if (currentReceipt) {
+      downloadReceiptAsPDF(receiptRef, currentReceipt);
+      
+      toast({
+        title: 'Success',
+        description: 'Receipt downloaded successfully'
+      });
+    }
+  };
+  
+  // Handle new transaction
+  const handleNewTransaction = () => {
     setReceiptDialogOpen(false);
+    setCheckoutComplete(false);
+    setSelectedCustomerId('');
+    // Receipt has already been cleared via checkout()
   };
   
   return (
@@ -215,13 +247,13 @@ const POS: React.FC = () => {
             {filteredProducts.map(product => (
               <Card 
                 key={product.id} 
-                className="cursor-pointer hover:border-primary/50 transition-colors"
+                className="cursor-pointer hover:border-primary/50 transition-colors glass-card"
                 onClick={() => handleAddToCart(product)}
               >
                 <CardHeader className="pb-2">
                   <div className="flex justify-between">
                     <CardTitle className="text-base">{product.name}</CardTitle>
-                    <Badge variant={product.category === 'repair' ? 'default' : 'outline'}>
+                    <Badge variant={product.category === 'repair' ? 'default' : 'outline'} className="animate-fade-in">
                       {product.category === 'spare-part' ? 'Part' : 
                        product.category === 'repair' ? 'Service' : 
                        product.category.charAt(0).toUpperCase() + product.category.slice(1)}
@@ -262,7 +294,7 @@ const POS: React.FC = () => {
         
         {/* Cart */}
         <div className="lg:col-span-2">
-          <Card className="h-full flex flex-col">
+          <Card className="h-full flex flex-col glass-card shadow-lg">
             <CardHeader className="pb-2">
               <div className="flex justify-between items-center">
                 <CardTitle className="flex items-center gap-2">
@@ -289,7 +321,7 @@ const POS: React.FC = () => {
                 {cartItems.length > 0 ? (
                   <ul className="space-y-3">
                     {cartItems.map(item => (
-                      <li key={item.id} className="border-b pb-3 last:border-0">
+                      <li key={item.id} className="border-b pb-3 last:border-0 animate-fade-in">
                         <div className="flex justify-between">
                           <div className="flex-1">
                             <div className="font-medium">{item.name}</div>
@@ -409,7 +441,7 @@ const POS: React.FC = () => {
       
       {/* Checkout Dialog */}
       <Dialog open={checkoutDialogOpen} onOpenChange={setCheckoutDialogOpen}>
-        <DialogContent>
+        <DialogContent className="glass-card">
           <DialogHeader>
             <DialogTitle>Complete Transaction</DialogTitle>
           </DialogHeader>
@@ -468,82 +500,47 @@ const POS: React.FC = () => {
       
       {/* Receipt Dialog */}
       <Dialog open={receiptDialogOpen} onOpenChange={setReceiptDialogOpen}>
-        <DialogContent>
+        <DialogContent className="sm:max-w-md glass-card">
           <DialogHeader>
             <DialogTitle>Transaction Receipt</DialogTitle>
           </DialogHeader>
           
           {currentReceipt && (
             <div className="space-y-4">
-              <div className="text-center border-b pb-4">
-                <h3 className="text-xl font-bold">Bengkel POS</h3>
-                <p className="text-muted-foreground">
-                  Receipt #{currentReceipt.id}
-                </p>
-                <p className="text-muted-foreground">
-                  {new Date(currentReceipt.date).toLocaleString()}
-                </p>
-              </div>
+              <Receipt 
+                ref={receiptRef}
+                transaction={currentReceipt}
+              />
               
-              <div>
-                <p><strong>Customer:</strong> {currentReceipt.customerName || 'Walk-in Customer'}</p>
-              </div>
-              
-              <div className="border-t border-b py-4">
-                <table className="w-full">
-                  <thead>
-                    <tr className="border-b">
-                      <th className="text-left py-1">Item</th>
-                      <th className="text-right py-1">Price</th>
-                      <th className="text-right py-1">Qty</th>
-                      <th className="text-right py-1">Total</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {currentReceipt.items.map((item: any) => (
-                      <tr key={item.id} className="border-b last:border-0">
-                        <td className="py-1">{item.name}</td>
-                        <td className="text-right py-1 currency">{formatIDR(item.price)}</td>
-                        <td className="text-right py-1">{item.quantity}</td>
-                        <td className="text-right py-1 currency">{formatIDR(item.price * item.quantity)}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-              
-              <div className="space-y-1">
-                <div className="flex justify-between">
-                  <span>Subtotal:</span>
-                  <span className="currency">{formatIDR(currentReceipt.subtotal)}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span>Tax:</span>
-                  <span className="currency">{formatIDR(currentReceipt.tax)}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span>Discount:</span>
-                  <span className="currency">{formatIDR(currentReceipt.discount)}</span>
-                </div>
-                <div className="flex justify-between font-bold text-lg pt-2 border-t">
-                  <span>Total:</span>
-                  <span className="currency">{formatIDR(currentReceipt.total)}</span>
-                </div>
-              </div>
-              
-              <div className="text-center text-muted-foreground text-sm pt-4 border-t">
-                <p>Thank you for your business!</p>
+              <div className="flex flex-col sm:flex-row gap-3 mt-4">
+                <Button 
+                  variant="outline" 
+                  className="flex-1"
+                  onClick={handlePrintReceipt}
+                >
+                  <Printer className="h-4 w-4 mr-2" />
+                  Print Receipt
+                </Button>
+                
+                <Button 
+                  variant="outline" 
+                  className="flex-1"
+                  onClick={handleDownloadReceipt}
+                >
+                  <Download className="h-4 w-4 mr-2" />
+                  Download PDF
+                </Button>
               </div>
             </div>
           )}
           
-          <DialogFooter>
+          <DialogFooter className="flex sm:justify-between">
+            <Button variant="default" onClick={handleNewTransaction}>
+              New Transaction
+            </Button>
+            
             <Button variant="outline" onClick={() => setReceiptDialogOpen(false)}>
               Close
-            </Button>
-            <Button onClick={printReceipt}>
-              <Receipt className="h-4 w-4 mr-2" />
-              Print Receipt
             </Button>
           </DialogFooter>
         </DialogContent>

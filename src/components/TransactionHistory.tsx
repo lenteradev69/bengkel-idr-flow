@@ -1,9 +1,11 @@
 
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { useApp } from '@/contexts/AppContext';
 import { formatIDR } from '@/utils/currencyFormatter';
+import { printReceipt, downloadReceiptAsPDF } from '@/utils/receiptUtils';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Receipt } from '@/components/ui/receipt';
 import {
   Dialog,
   DialogContent,
@@ -22,8 +24,10 @@ import {
   Search, 
   Calendar, 
   ChevronDown, 
-  Receipt,
-  DownloadCloud
+  Receipt as ReceiptIcon,
+  DownloadCloud,
+  Printer,
+  Download
 } from 'lucide-react';
 import { 
   Table, 
@@ -38,6 +42,9 @@ import { useToast } from '@/hooks/use-toast';
 const TransactionHistory: React.FC = () => {
   const { transactions, customers } = useApp();
   const { toast } = useToast();
+  
+  // Receipt ref for printing/downloading
+  const receiptRef = useRef<HTMLDivElement>(null);
   
   // State for search and filters
   const [searchTerm, setSearchTerm] = useState('');
@@ -78,13 +85,25 @@ const TransactionHistory: React.FC = () => {
   };
   
   // Handle print receipt
-  const printReceipt = () => {
-    // In a real app, this would connect to a printer
-    // For now, we'll just show a toast
+  const handlePrintReceipt = () => {
+    printReceipt(receiptRef);
+    
     toast({
       title: 'Success',
-      description: 'Receipt printed successfully'
+      description: 'Receipt sent to printer'
     });
+  };
+  
+  // Handle download receipt
+  const handleDownloadReceipt = () => {
+    if (selectedTransaction) {
+      downloadReceiptAsPDF(receiptRef, selectedTransaction);
+      
+      toast({
+        title: 'Success',
+        description: 'Receipt downloaded successfully'
+      });
+    }
   };
   
   // Handle export transactions
@@ -161,7 +180,7 @@ const TransactionHistory: React.FC = () => {
       
       {/* Transactions Table */}
       {filteredTransactions.length > 0 ? (
-        <div className="border rounded-lg overflow-hidden">
+        <div className="border rounded-lg overflow-hidden glass-card shadow-md">
           <Table>
             <TableHeader>
               <TableRow>
@@ -175,7 +194,7 @@ const TransactionHistory: React.FC = () => {
             </TableHeader>
             <TableBody>
               {filteredTransactions.map(transaction => (
-                <TableRow key={transaction.id}>
+                <TableRow key={transaction.id} className="hover:bg-muted/50 transition-colors cursor-pointer fade-in" onClick={() => viewReceipt(transaction)}>
                   <TableCell>
                     {new Date(transaction.date).toLocaleDateString()}
                     <div className="text-xs text-muted-foreground">
@@ -199,9 +218,12 @@ const TransactionHistory: React.FC = () => {
                     <Button
                       variant="ghost"
                       size="sm"
-                      onClick={() => viewReceipt(transaction)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        viewReceipt(transaction);
+                      }}
                     >
-                      <Receipt className="h-4 w-4 mr-2" />
+                      <ReceiptIcon className="h-4 w-4 mr-2" />
                       View
                     </Button>
                   </TableCell>
@@ -211,8 +233,8 @@ const TransactionHistory: React.FC = () => {
           </Table>
         </div>
       ) : (
-        <div className="flex flex-col items-center justify-center py-12 text-center border rounded-lg">
-          <Receipt className="h-12 w-12 text-muted mb-4" />
+        <div className="flex flex-col items-center justify-center py-12 text-center border rounded-lg glass-card">
+          <ReceiptIcon className="h-12 w-12 text-muted mb-4" />
           <h3 className="text-lg font-medium">No transactions found</h3>
           <p className="text-muted-foreground mt-1">
             Try adjusting your search or filters
@@ -222,71 +244,36 @@ const TransactionHistory: React.FC = () => {
       
       {/* Receipt Dialog */}
       <Dialog open={receiptDialogOpen} onOpenChange={setReceiptDialogOpen}>
-        <DialogContent>
+        <DialogContent className="sm:max-w-md glass-card">
           <DialogHeader>
             <DialogTitle>Transaction Receipt</DialogTitle>
           </DialogHeader>
           
           {selectedTransaction && (
             <div className="space-y-4">
-              <div className="text-center border-b pb-4">
-                <h3 className="text-xl font-bold">Bengkel POS</h3>
-                <p className="text-muted-foreground">
-                  Receipt #{selectedTransaction.id}
-                </p>
-                <p className="text-muted-foreground">
-                  {new Date(selectedTransaction.date).toLocaleString()}
-                </p>
-              </div>
+              <Receipt 
+                ref={receiptRef}
+                transaction={selectedTransaction}
+              />
               
-              <div>
-                <p><strong>Customer:</strong> {selectedTransaction.customerName || 'Walk-in Customer'}</p>
-              </div>
-              
-              <div className="border-t border-b py-4">
-                <table className="w-full">
-                  <thead>
-                    <tr className="border-b">
-                      <th className="text-left py-1">Item</th>
-                      <th className="text-right py-1">Price</th>
-                      <th className="text-right py-1">Qty</th>
-                      <th className="text-right py-1">Total</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {selectedTransaction.items.map((item: any) => (
-                      <tr key={item.id} className="border-b last:border-0">
-                        <td className="py-1">{item.name}</td>
-                        <td className="text-right py-1 currency">{formatIDR(item.price)}</td>
-                        <td className="text-right py-1">{item.quantity}</td>
-                        <td className="text-right py-1 currency">{formatIDR(item.price * item.quantity)}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-              
-              <div className="space-y-1">
-                <div className="flex justify-between">
-                  <span>Subtotal:</span>
-                  <span className="currency">{formatIDR(selectedTransaction.subtotal)}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span>Tax:</span>
-                  <span className="currency">{formatIDR(selectedTransaction.tax)}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span>Discount:</span>
-                  <span className="currency">{formatIDR(selectedTransaction.discount)}</span>
-                </div>
-                <div className="flex justify-between font-bold text-lg pt-2 border-t">
-                  <span>Total:</span>
-                  <span className="currency">{formatIDR(selectedTransaction.total)}</span>
-                </div>
-              </div>
-              
-              <div className="text-center text-muted-foreground text-sm pt-4 border-t">
-                <p>Thank you for your business!</p>
+              <div className="flex flex-col sm:flex-row gap-3 mt-4">
+                <Button 
+                  variant="outline" 
+                  className="flex-1"
+                  onClick={handlePrintReceipt}
+                >
+                  <Printer className="h-4 w-4 mr-2" />
+                  Print Receipt
+                </Button>
+                
+                <Button 
+                  variant="outline" 
+                  className="flex-1"
+                  onClick={handleDownloadReceipt}
+                >
+                  <Download className="h-4 w-4 mr-2" />
+                  Download PDF
+                </Button>
               </div>
             </div>
           )}
@@ -294,10 +281,6 @@ const TransactionHistory: React.FC = () => {
           <DialogFooter>
             <Button variant="outline" onClick={() => setReceiptDialogOpen(false)}>
               Close
-            </Button>
-            <Button onClick={printReceipt}>
-              <Receipt className="h-4 w-4 mr-2" />
-              Print Receipt
             </Button>
           </DialogFooter>
         </DialogContent>

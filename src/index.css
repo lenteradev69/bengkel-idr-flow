@@ -129,3 +129,50 @@
   }
 }
 
+/* Print styles for receipts */
+@media print {
+  body * {
+    visibility: hidden;
+  }
+  
+  .dialog-overlay {
+    background: transparent !important;
+  }
+  
+  .receipt-to-print,
+  .receipt-to-print * {
+    visibility: visible;
+  }
+  
+  .receipt-to-print {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    padding: 15px;
+  }
+  
+  /* Hide unnecessary elements when printing */
+  button, 
+  .dialog-actions,
+  .dialog-header {
+    display: none !important;
+  }
+  
+  /* Style adjustments for printed receipt */
+  .receipt-container {
+    max-width: 80mm; /* Standard thermal receipt width */
+    margin: 0 auto;
+    padding: 0;
+    box-shadow: none;
+    border: none;
+  }
+  
+  .text-muted-foreground {
+    color: #666 !important;
+  }
+  
+  .border-t, .border-b {
+    border-color: #ddd !important;
+  }
+}
