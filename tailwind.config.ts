@@ -64,17 +64,17 @@ export default {
 					ring: 'hsl(var(--sidebar-ring))'
 				},
 				workshop: {
-					50: '#eaf5ff',
-					100: '#d9ebff',
-					200: '#bddaff',
-					300: '#8fbfff',
-					400: '#5c98ff',
-					500: '#3670ff',
-					600: '#1e49f8',
-					700: '#1236e3',
-					800: '#152fb8',
-					900: '#1a3382',
-					950: '#101f4c',
+					50: '#f0f7ff',
+					100: '#e0effe',
+					200: '#bae0fd',
+					300: '#78cafc',
+					400: '#36acf7',
+					500: '#0e8fe9',
+					600: '#026fc7',
+					700: '#0458a2',
+					800: '#0a4a86',
+					900: '#0e3f70',
+					950: '#0a2a4d',
 				}
 			},
 			borderRadius: {
@@ -98,11 +98,28 @@ export default {
 					to: {
 						height: '0'
 					}
+				},
+				'fade-in': {
+					from: {
+						opacity: '0',
+						transform: 'translateY(10px)'
+					},
+					to: {
+						opacity: '1',
+						transform: 'translateY(0)'
+					}
 				}
 			},
 			animation: {
 				'accordion-down': 'accordion-down 0.2s ease-out',
-				'accordion-up': 'accordion-up 0.2s ease-out'
+				'accordion-up': 'accordion-up 0.2s ease-out',
+				'fade-in': 'fade-in 0.3s ease-out'
+			},
+			boxShadow: {
+				'glass': '0 4px 20px -2px rgba(0, 0, 0, 0.1)',
+				'elevation-1': '0 1px 3px rgba(0, 0, 0, 0.1), 0 1px 2px rgba(0, 0, 0, 0.06)',
+				'elevation-2': '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
+				'elevation-3': '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)',
 			}
 		}
 	},
